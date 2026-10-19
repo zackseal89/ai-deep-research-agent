@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "dev": "node ./node_modules/next/dist/bin/next dev --webpack -p 3000",
+    "build": "node ./node_modules/next/dist/bin/next build",
+    "start": "node ./node_modules/next/dist/bin/next start",
+    "typecheck": "node ./node_modules/typescript/bin/tsc --noEmit"
   },
   "dependencies": {
     "@copilotkit/react-core": "^1.51.0",
@@ -16,7 +16,8 @@
     "next": "^16.1.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "react-markdown": "^9.0.0"
+    "react-markdown": "^9.0.0",
+    "rxjs": "^7.8.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

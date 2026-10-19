@@ -12,7 +12,7 @@ import {
   Circle,
   CircleDot,
   X,
-} from "lucide-react";
+} from "@/components/icons";
 import { ResearchState, Todo, ResearchFile, Source } from "@/types/research";
 import { FileViewerModal } from "@/components/FileViewerModal";
 

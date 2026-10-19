@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
-import { X, Download, FileText } from "lucide-react";
+import { X, Download, FileText } from "@/components/icons";
 import type { ResearchFile } from "@/types/research";
 
 /**

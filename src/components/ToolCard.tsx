@@ -9,7 +9,7 @@ import {
   Save,
   BookOpen,
   Check,
-} from "lucide-react";
+} from "@/components/icons";
 
 /**
  * ToolCard - Generative UI for tool call rendering in chat.
