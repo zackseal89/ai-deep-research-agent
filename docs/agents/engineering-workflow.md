@@ -1,43 +1,148 @@
-# Engineering workflow with Matt Pocock skills
+# Start here: developing with Codex and the engineering skills
 
-The engineering skills are installed in the coding assistant environment. This repository already has the one-time setup: GitHub Issues, triage labels, and domain documentation rules. Open this repository in Codex and ask for a task normally, or name a skill when you want its specific workflow. Codex accepts names such as `$mattpocock-skills:diagnosing-bugs`; in an environment that exposes slash commands, use `/diagnosing-bugs`.
+This is a user guide for the **coding assistant**. The skills help Codex plan, build, test, and review code. They do not run inside the Meridian application's research assistant.
 
-## Choose a starting point
+There are two kinds of commands below:
 
-| Situation | Skill | Example request |
+- **Chat request**: type it into Codex. A skill name starts with `$mattpocock-skills:`. Replace text in `[square brackets]` with your details. If your agent shows slash commands instead, use `/skill-name`.
+- **Terminal command**: run it in PowerShell from the project folder. You can also ask Codex to run it for you.
+
+You only need to remember five starting points: `setup-matt-pocock-skills` once per repository, `grill-with-docs` for an unclear idea, `implement` for defined work, `diagnosing-bugs` for a bug, and `code-review` for an independent review. If unsure, use `ask-matt`.
+
+The plugin is already installed in your current Codex environment. On a different machine or installation, follow section 6 first.
+
+## 1. Start a project from zero
+
+1. **Create and open a folder.** In PowerShell:
+
+   ```powershell
+   New-Item -ItemType Directory -Path .\my-project
+   Set-Location .\my-project
+   git init
+   git branch -M main
+   ```
+
+   Open this folder as a project in Codex. Pick a meaningful folder name in place of `my-project`. If Codex creates the project folder for you, skip these terminal commands.
+
+2. **Choose where work will be tracked.** For GitHub Issues, create an empty repository on GitHub (leave its README, `.gitignore`, and license options unchecked), copy its HTTPS URL, then connect this folder:
+
+   ```powershell
+   git remote add origin https://github.com/YOUR-NAME/YOUR-REPO.git
+   ```
+
+   Replace the URL with your repository's URL. If this folder already has an `origin` remote, skip this command. You can ask Codex to inspect and connect the remote for you. If you do not want a GitHub repository yet, choose local markdown in the next step.
+
+3. **Set up this skill suite once for the new repository.** Chat request:
+
+   > Use `$mattpocock-skills:setup-matt-pocock-skills` in this repository. Use GitHub Issues for work tracking and the default triage labels. Put the agent instructions in `AGENTS.md` if there is no existing instruction file. Show me the draft requested by the skill, then complete the setup.
+
+   If you have no GitHub repository, replace “Use GitHub Issues” with “Use local markdown.” You can switch later by rerunning setup. The plugin is installed once in your coding environment; this repository setup is done once **per project**.
+
+4. **Describe the product before requesting code.** Chat request:
+
+   > Use `$mattpocock-skills:grill-with-docs` to define [the product and its first useful feature]. Ask about users, expected behavior, constraints, and how we will know it works. Record settled domain terms and decisions.
+
+   Answer its questions. You do not need a full specification at the start. The goal is a small first feature that can be run and checked.
+
+5. **Ask Codex to scaffold the project.** Chat request:
+
+   > Create the smallest runnable version of [the product] using [your preferred stack, or choose a suitable one]. Add a README with run and test commands, a `.gitignore`, and one meaningful check for the first feature. Run it and tell me what works.
+
+   If you have no preferred stack, say so. Codex should make a reasonable choice and explain it. Do not install a framework manually unless you want to.
+
+6. **Build the first small feature.** Chat request:
+
+   > Use `$mattpocock-skills:implement` to build [one defined, user-visible behavior]. Run the relevant checks, review the change, and explain how I can try it.
+
+7. **Save and publish the result.** Run `git status --short` to see changed files. Then ask Codex: “Commit only the reviewed project files and push `main` to `origin`.” On the first push, the terminal equivalent is `git push -u origin main`. If you chose local markdown and have no remote, commit locally and skip the push.
+
+## 2. Start in an existing codebase
+
+Open the repository in Codex. Ask:
+
+> Read the README and agent instructions, inspect the current Git status, and explain how to run and test this project. Do not change code yet.
+
+If `docs/agents/issue-tracker.md`, `docs/agents/triage-labels.md`, and `docs/agents/domain.md` are absent, run `$mattpocock-skills:setup-matt-pocock-skills` once. If they exist, do **not** run setup again for normal development.
+
+**For this Meridian repository, setup is already complete.** Open the project and go straight to a feature, bug, or review request.
+
+## 3. Everyday development: choose one path
+
+| What you have | Start with | Copyable chat request |
 | --- | --- | --- |
-| Unsure which workflow fits | `ask-matt` | “Use ask-matt to choose a workflow for improving the diligence report.” |
-| New feature with unclear requirements | `grill-with-docs` | “Use grill-with-docs to define saved research runs. Record settled terms and decisions.” |
-| Clear, small feature or fix | `implement` | “Use implement to add a retry action for a failed SEC fetch. Verify the affected UI and backend behavior.” |
-| Bug or slowdown without a known cause | `diagnosing-bugs` | “Use diagnosing-bugs to find why a saved deal sometimes disappears after refresh.” |
-| Concrete behavior you want built test-first | `tdd` | “Use tdd to add a regression test and fix for duplicate citations.” |
-| Large feature needing a durable plan | `to-spec`, then `to-tickets` | “Use to-spec for the agreed research history design, then to-tickets to split it into verifiable slices.” |
-| Ready GitHub issue or ticket | `implement` | “Use implement for issue #12; read its full brief and finish the checks.” |
-| Several agreed tickets to build together | `implement-spec` | “Use implement-spec for the approved spec and its linked tickets.” |
-| Incoming issues need sorting | `triage` | “Use triage on open GitHub issues and prepare agent-ready briefs.” |
-| Change needs independent review | `code-review` | “Use code-review on this branch against main and report actionable findings.” |
-| Code structure is getting hard to change | `improve-codebase-architecture` | “Use improve-codebase-architecture to survey the Python diligence service.” |
-| Very large effort with unresolved decisions | `wayfinder` | “Use wayfinder to map the decisions needed for multi-company research.” |
-| After a difficult build | `retro` | “Use retro on this session and propose improvements to our checks and instructions.” |
+| An idea that needs decisions | `grill-with-docs` | “Use `$mattpocock-skills:grill-with-docs` to define [feature]. Help me settle behavior and terminology before implementation.” |
+| A clear, small task | `implement` | “Use `$mattpocock-skills:implement` to [specific change]. Run relevant checks and show me the result.” |
+| A bug with an unknown cause | `diagnosing-bugs` | “Use `$mattpocock-skills:diagnosing-bugs` to reproduce [symptom], find its cause, fix it, and verify the fix.” |
+| A change that needs review | `code-review` | “Use `$mattpocock-skills:code-review` to review this branch against `main`. Report actionable findings with file locations.” |
+| You do not know which path fits | `ask-matt` | “Use `$mattpocock-skills:ask-matt` to choose the right workflow for [goal].” |
 
-For a normal feature, start with `grill-with-docs` when requirements are unclear. If the result fits one session, use `implement`. For a multi-session build, use `to-spec`, then `to-tickets`, then implement each ticket. `implement` calls for tests and review as part of its workflow; a separate `tdd` or `code-review` request is useful when you want to focus on only that step.
+Give Codex the **symptom or desired behavior**, one concrete example, and any constraint that matters. For a bug, include how to reproduce it. For an existing GitHub issue, say “issue #12” or paste its link. The assistant can inspect files and run commands; you do not need to list every file it should edit.
 
-## Give the assistant a useful request
+## 4. When a feature is too large for one session
 
-Include the user-visible problem, the expected result, a reproduction or example when available, and any constraints. Point to an issue number or file if one exists. Say whether you want a spec, code, a review, or just a diagnosis. For example:
+Use this sequence only when a feature has several parts or decisions:
 
-> Use `$mattpocock-skills:diagnosing-bugs` to investigate why a saved diligence run can show an empty risk matrix after restart. Reproduce it, identify the cause, fix it, and run the relevant Python tests. Keep other working-tree changes intact.
+1. `grill-with-docs`: settle requirements and domain language.
+2. `to-spec`: turn the agreed conversation into a specification on the configured issue tracker.
+3. `to-tickets`: split the specification into small, verifiable GitHub issues.
+4. `implement`: finish one ready ticket at a time, using its issue number. For a coordinated build of all tickets, explicitly request `implement-spec`.
+5. `code-review`: review the completed branch or pull request when you want another focused review.
 
-For a new feature:
+You can say, for example:
 
-> Use `$mattpocock-skills:grill-with-docs` to define how reviewers should edit valuation assumptions. Ask about the decision points, update domain terms or ADRs only when settled, then help me turn the outcome into a spec and tickets.
+> Use `$mattpocock-skills:to-spec` to turn our agreed design into a spec issue. Then use `$mattpocock-skills:to-tickets` to split it into independently verifiable work. Show me the ticket order.
 
-## Where the work is recorded
+The spec and tickets live in GitHub Issues for this repository. `implement` includes testing and review in its own workflow, so you normally do not need to request separate `tdd` and `code-review` steps for every small task.
 
-- `docs/agents/issue-tracker.md` tells the assistant how to use this repository's GitHub Issues.
-- `docs/agents/triage-labels.md` defines the five workflow labels.
-- `docs/agents/domain.md` tells the assistant when to read the glossary and ADRs.
-- `GLOSSARY.md` and `docs/adr/` are created as domain terms and decisions are settled; their absence is normal.
-- `README.md` contains the app's run instructions and checks. The frontend is in `src/`; the Python service is in `agent/`.
+## 5. Run and check this Meridian project
 
-The skills are workflows for the coding assistant. They do not add tools or behavior to the Meridian app's runtime assistant. Install the plugin in any new coding-assistant environment before relying on these skill names; the repository configuration and this guide alone do not install it.
+From the repository root, install frontend dependencies once and check the frontend:
+
+```powershell
+npm ci
+npm run typecheck
+npm run build
+```
+
+From the `agent` folder, install locked Python dependencies once and run backend tests:
+
+```powershell
+Set-Location agent
+uv sync --locked
+uv run --locked python -m unittest discover -s tests -v
+```
+
+Use `Set-Location ..` to return to the repository root. For local app startup and required environment variables, follow `README.md`. Ask Codex to run only checks relevant to a small change; a full build is useful before shipping.
+
+Useful Git commands from the repository root:
+
+```powershell
+git status --short       # See changed files
+git diff                 # See unstaged edits
+git log -1 --oneline     # See the latest commit
+git push                 # Publish committed changes
+```
+
+Codex can run these for you. Before asking it to commit, check that the changed files are the ones you intended. If it created a pull request, ask for a link and a short summary of what passed.
+
+## 6. If a skill is missing in a new Codex installation
+
+The repository contains **configuration**, not the plugin itself. Install the plugin once in that Codex environment, then reopen the project:
+
+```powershell
+codex plugin marketplace add mattpocock/skills
+codex plugin add mattpocock-skills@mattpocock
+```
+
+These installation commands come from the installed plugin's README. You do not run them for every repository. If you use Claude Code or another coding assistant, install the same skill suite using that assistant's plugin mechanism; the repository's `AGENTS.md` and `docs/agents/` remain useful project context.
+
+## Less common skills
+
+- `triage`: sort incoming issues and prepare clear briefs for an agent.
+- `tdd`: focus on a test-first change.
+- `research`: investigate external technical facts and save findings.
+- `improve-codebase-architecture`: survey structure before a larger refactor.
+- `wayfinder`: resolve decisions for a project too large to plan in one session.
+- `retro`: improve instructions and checks after a difficult build.
+
+For this repository, the assistant should read `AGENTS.md`, `docs/agents/issue-tracker.md`, `docs/agents/triage-labels.md`, and `docs/agents/domain.md` as relevant. `GLOSSARY.md` and `docs/adr/` may be created later when domain language or decisions are settled.
