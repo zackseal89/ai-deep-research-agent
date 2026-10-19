@@ -1,5 +1,7 @@
 # Meridian | Investment Diligence V1
 
+For coding-assistant workflows and Matt Pocock engineering skills, see [the engineering workflow guide](docs/agents/engineering-workflow.md). Repository instructions for Codex are in [AGENTS.md](AGENTS.md), and `CLAUDE.md` imports the same instructions.
+
 Meridian is a local guided demo for evidence-backed diligence on US public companies. Enter a ticker and optional peers, review SEC filing metadata and annual USD financials, add dated valuation assumptions, and export three draft IC artifacts. Every draft is marked **Draft—Needs Review**. The app does not approve investments or claim to complete diligence.
 
 The UI keeps five workflow stages, saved deal snapshots, cited evidence, and artifact revisions in a local SQLite database. Live financial facts come from SEC EDGAR submissions and company-facts endpoints. Tavily is optional for public commercial and news discovery; without it, those coverage areas remain explicitly incomplete. A configured live model enables the assistant chat. The saved fixtures work without a model but contain no researched findings.
