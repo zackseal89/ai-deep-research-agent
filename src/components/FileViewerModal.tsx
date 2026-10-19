@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { X, Download, FileText } from "@/components/icons";
+import remarkGfm from "remark-gfm";
+import { X, Download, FileText, Clipboard, Check } from "@/components/icons";
 import type { ResearchFile } from "@/types/research";
 
 /**
@@ -21,6 +22,7 @@ interface FileViewerModalProps {
 }
 
 export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
+  const [copied, setCopied] = useState(false);
   // Handle Escape key to close modal
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -60,6 +62,16 @@ export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(file.content);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setCopied(false);
+    }
   };
 
   return (
@@ -125,6 +137,9 @@ export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
             </h2>
           </div>
           <div className="flex items-center gap-2">
+            <button onClick={() => void handleCopy()} className="p-2 hover:bg-[var(--color-glass-subtle)] rounded-lg transition-colors" aria-label="Copy Markdown" title="Copy Markdown">
+              {copied ? <Check className="w-5 h-5 text-[var(--color-success)]" /> : <Clipboard className="w-5 h-5 text-[var(--color-text-secondary)]" />}
+            </button>
             <button
               onClick={handleDownload}
               className="p-2 hover:bg-[var(--color-glass-subtle)] rounded-lg transition-colors"
@@ -150,7 +165,7 @@ export function FileViewerModal({ file, onClose }: FileViewerModalProps) {
           style={{ padding: "var(--space-8)" }}
         >
           <div className="prose prose-sm prose-slate max-w-none">
-            <ReactMarkdown>{file.content}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{file.content}</ReactMarkdown>
           </div>
         </div>
 

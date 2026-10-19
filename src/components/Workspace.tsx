@@ -1,425 +1,102 @@
 "use client";
 
-import { useState } from "react";
-import {
-  ChevronDown,
-  ChevronRight,
-  ListTodo,
-  FileText,
-  Download,
-  Globe,
-  Check,
-  Circle,
-  CircleDot,
-  X,
-} from "@/components/icons";
-import { ResearchState, Todo, ResearchFile, Source } from "@/types/research";
+import { useMemo, useState } from "react";
+import { Check, Clipboard, Download, ExternalLink, FileText, Globe2, ListChecks, RotateCw } from "@/components/icons";
 import { FileViewerModal } from "@/components/FileViewerModal";
+import { ValuationEditor } from "@/components/ValuationEditor";
+import type { Deal, ResearchFile, Source } from "@/types/research";
 
-// Helper function to download file content
+type Tab = "checklist" | "artifacts" | "evidence" | "valuation";
+
 function downloadFile(file: ResearchFile) {
-  const blob = new Blob([file.content], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = file.path.split("/").pop() || "file.txt";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  const url = URL.createObjectURL(new Blob([file.content], { type: "text/markdown;charset=utf-8" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = file.path.split("/").pop() || "diligence.md";
+  link.click();
   URL.revokeObjectURL(url);
 }
 
-interface WorkspaceProps {
-  state: ResearchState;
+function EvidenceList({ sources }: { sources: Source[] }) {
+  if (!sources.length) return <div className="workspace-empty"><Globe2 size={20} /><strong>No evidence loaded</strong><span>Run a dated SEC review to attach source links.</span></div>;
+  return <div className="evidence-list">{sources.map((source) => (
+    <article className="evidence-item" key={source.id}>
+      <div className="evidence-topline"><span className={`evidence-type evidence-${source.kind}`}>{source.kind}</span><span className="evidence-ticker">{source.ticker || "PUBLIC SOURCE"}</span><span className="evidence-verification">{source.verification.replaceAll("_", " ")}</span></div>
+      <a className="evidence-title" href={source.url} target="_blank" rel="noreferrer noopener">{source.title}<ExternalLink size={13} /></a>
+      <p className="evidence-excerpt">{source.excerpt || "Open the original source to review its supporting passage."}</p>
+      <div className="evidence-date">Published/filed {source.source_date || "date not supplied"} · Retrieved {new Date(source.retrieved_at).toLocaleDateString()}</div>
+    </article>
+  ))}</div>;
 }
 
-// Collapsible section component with smooth transitions
-function Section({
-  title,
-  icon: Icon,
-  children,
-  defaultOpen = true,
-  badge,
-}: {
-  title: string;
-  icon: React.ElementType;
-  children: React.ReactNode;
-  defaultOpen?: boolean;
-  badge?: number;
-}) {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
-
-  return (
-    <div className="workspace-section">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="workspace-section-header w-full transition-all duration-200"
-      >
-        <div className="flex items-center gap-3">
-          <Icon className="w-5 h-5 text-[var(--color-text-secondary)]" />
-          <span className="font-semibold text-[var(--color-text-primary)]">
-            {title}
-          </span>
-          {badge !== undefined && badge > 0 && (
-            <span
-              style={{
-                background: "var(--color-accent)",
-                color: "var(--color-background)",
-                padding: "var(--space-1) var(--space-2)",
-                fontSize: "var(--text-xs)",
-                fontWeight: "var(--font-semibold)",
-                borderRadius: "var(--radius-lg)",
-              }}
-            >
-              {badge}
-            </span>
-          )}
-        </div>
-        {isOpen ? (
-          <ChevronDown className="w-5 h-5 text-[var(--color-text-tertiary)] transition-transform" />
-        ) : (
-          <ChevronRight className="w-5 h-5 text-[var(--color-text-tertiary)] transition-transform" />
-        )}
-      </button>
-      {isOpen && <div className="workspace-section-content">{children}</div>}
-    </div>
-  );
-}
-
-// Todo list component with animations
-function TodoList({ todos }: { todos: Todo[] }) {
-  if (todos.length === 0) {
-    return (
-      <div
-        className="empty-state"
-        style={{
-          paddingTop: "var(--space-8)",
-          paddingBottom: "var(--space-8)",
-          animation: "fadeIn 0.4s ease",
-        }}
-      >
-        <ListTodo
-          size={32}
-          strokeWidth={1.5}
-          style={{
-            color: "var(--color-text-tertiary)",
-            marginBottom: "var(--space-3)",
-          }}
-        />
-        <p style={{ fontSize: "var(--text-sm)" }}>No tasks yet</p>
-        <p className="text-xs mt-1">Research tasks will appear here</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-1">
-      {todos.map((todo) => (
-        <div
-          key={todo.id}
-          className={`todo-item animate-fadeSlideIn ${
-            todo.status === "completed"
-              ? "todo-item-completed"
-              : todo.status === "in_progress"
-                ? "todo-item-inprogress"
-                : "todo-item-pending"
-          }`}
-        >
-          <span
-            className={`${
-              todo.status === "completed"
-                ? "status-completed"
-                : todo.status === "in_progress"
-                  ? "status-inprogress"
-                  : "status-pending"
-            }`}
-          >
-            {todo.status === "completed" ? (
-              <Check size={14} />
-            ) : todo.status === "in_progress" ? (
-              <CircleDot size={14} />
-            ) : (
-              <Circle size={14} />
-            )}
-          </span>
-          <span className="text-sm">{todo.content}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// File list component with click-to-view and animations
-function FileList({
-  files,
-  onFileClick,
-}: {
-  files: ResearchFile[];
-  onFileClick: (file: ResearchFile) => void;
-}) {
-  if (files.length === 0) {
-    return (
-      <div
-        className="empty-state"
-        style={{
-          paddingTop: "var(--space-8)",
-          paddingBottom: "var(--space-8)",
-          animation: "fadeIn 0.4s ease",
-        }}
-      >
-        <FileText
-          size={32}
-          strokeWidth={1.5}
-          style={{
-            color: "var(--color-text-tertiary)",
-            marginBottom: "var(--space-3)",
-          }}
-        />
-        <p style={{ fontSize: "var(--text-sm)" }}>No files yet</p>
-        <p className="text-xs mt-1">Research artifacts will appear here</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-2">
-      {files.map((file, i) => (
-        <div
-          key={`${file.path}-${i}`}
-          className="file-item animate-fadeSlideIn"
-          onClick={() => onFileClick(file)}
-        >
-          <div className="flex items-center gap-3">
-            <div className="file-item-icon">
-              <FileText className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-[var(--color-text-primary)]">
-                {file.path.split("/").pop()}
-              </p>
-              <p className="text-xs text-[var(--color-text-tertiary)]">
-                {file.path}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={(e) => {
-              e.stopPropagation(); // Don't trigger file view on download click
-              downloadFile(file);
-            }}
-            className="p-2 rounded-lg hover:bg-[var(--color-glass-subtle)] transition-colors"
-            aria-label="Download file"
-            title="Download file"
-          >
-            <Download className="w-4 h-4 text-[var(--color-text-secondary)]" />
-          </button>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// Source list component with error states and animations
-function SourceList({ sources }: { sources: Source[] }) {
-  if (sources.length === 0) {
-    return (
-      <div
-        className="empty-state"
-        style={{
-          paddingTop: "var(--space-8)",
-          paddingBottom: "var(--space-8)",
-          animation: "fadeIn 0.4s ease",
-        }}
-      >
-        <Globe
-          size={32}
-          strokeWidth={1.5}
-          style={{
-            color: "var(--color-text-tertiary)",
-            marginBottom: "var(--space-3)",
-          }}
-        />
-        <p style={{ fontSize: "var(--text-sm)" }}>No sources yet</p>
-        <p className="text-xs mt-1">Web sources will appear here</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-2">
-      {sources.map((source, i) => (
-        <div
-          key={`${source.url}-${i}`}
-          className={`file-item animate-fadeSlideIn ${source.status === "failed" ? "source-failed" : ""}`}
-          title={
-            source.status === "failed"
-              ? "Failed to scrape this source"
-              : undefined
-          }
-        >
-          <div className="flex items-center gap-3">
-            <span
-              className={`source-indicator ${
-                source.status === "scraped"
-                  ? "status-completed"
-                  : source.status === "failed"
-                    ? ""
-                    : "status-pending"
-              }`}
-              style={
-                source.status === "failed"
-                  ? { color: "var(--color-error)" }
-                  : undefined
-              }
-            >
-              {source.status === "scraped" ? (
-                <Check size={14} style={{ color: "var(--color-success)" }} />
-              ) : source.status === "failed" ? (
-                <X size={14} style={{ color: "var(--color-error)" }} />
-              ) : (
-                <Circle size={14} />
-              )}
-            </span>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">
-                {source.title ||
-                  (() => {
-                    try {
-                      return new URL(source.url).hostname;
-                    } catch {
-                      return source.url.slice(0, 40);
-                    }
-                  })()}
-              </p>
-              <a
-                href={source.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)] truncate block"
-              >
-                {source.url}
-              </a>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// Main Workspace component
-export function Workspace({ state }: WorkspaceProps) {
-  const { todos, files, sources } = state;
-  const fileCount = files.length;
-  const todoCount = todos.length;
-  const sourceCount = sources.length;
-  const completedTodos = todos.filter((t) => t.status === "completed").length;
-
-  // State for file viewer modal
+export function Workspace({ deal, onSaveValuation }: { deal: Deal; onSaveValuation: (value: Deal["valuation"]) => Promise<void> }) {
+  const [activeTab, setActiveTab] = useState<Tab>("artifacts");
   const [selectedFile, setSelectedFile] = useState<ResearchFile | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [copiedPath, setCopiedPath] = useState("");
+  const [copyError, setCopyError] = useState("");
+  const files = deal.artifacts ?? [];
+  const sources = deal.sources ?? [];
+  const stages = deal.stages ?? [];
+  const evidenceCount = sources.length;
+  const completedCount = stages.filter((stage) => stage.status === "completed").length;
+  const metrics = useMemo(() => deal.metrics ?? [], [deal.metrics]);
 
-  const handleExportAll = () => {
-    if (files.length === 0) return;
-    const combinedContent = files
-      .map(
-        (f) =>
-          `# ${f.path}\n*Generated: ${new Date(f.createdAt).toLocaleString()}*\n\n${f.content}\n\n---\n`
-      )
-      .join("\n");
+  async function copyFile(file: ResearchFile) {
+    try {
+      await navigator.clipboard.writeText(file.content);
+      setCopiedPath(file.path);
+      setCopyError("");
+      window.setTimeout(() => setCopiedPath(""), 1800);
+    } catch {
+      setCopyError("Clipboard permission was denied. Select the preview text and copy it manually.");
+    }
+  }
 
-    const blob = new Blob([combinedContent], { type: "text/markdown" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `deep-research-dossier-${Date.now()}.md`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
+  function exportAll() {
+    const content = files.map((file) => `<!-- ${file.path} · revision ${file.revision} -->\n${file.content}`).join("\n\n---\n\n");
+    downloadFile({ path: "/reports/IC-diligence-draft.md", content, revision: 1, updated_at: new Date().toISOString() });
+  }
 
-  const handleCopySummary = async () => {
-    if (files.length === 0) return;
-    const summary = files.map((f) => `### ${f.path}\n${f.content}`).join("\n\n");
-    await navigator.clipboard.writeText(summary);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const tabs: { id: Tab; label: string; count?: number }[] = [
+    { id: "checklist", label: "Due diligence", count: stages.length },
+    { id: "artifacts", label: "Artifacts", count: files.length },
+    { id: "evidence", label: "Evidence & citations", count: evidenceCount },
+    { id: "valuation", label: "Valuation inputs" },
+  ];
 
   return (
-    <div className="workspace-panel p-6 h-full flex flex-col overflow-y-auto">
-      {/* Header with Telemetry & Actions */}
-      <div className="mb-6 flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold text-[var(--color-text-primary)]">
-              Research Workspace
-            </h2>
-            <span className="text-[11px] font-semibold uppercase px-2 py-0.5 rounded-full bg-[var(--color-accent)]/10 text-[var(--color-accent)] border border-[var(--color-accent)]/20">
-              FDE Grounding
-            </span>
-          </div>
-          <p className="text-sm text-[var(--color-text-secondary)] mt-0.5">
-            Real-time execution artifacts, virtual filesystem & evidence
-          </p>
-
-          {/* Quick Stats Pill Strip */}
-          <div className="flex items-center gap-3 mt-3">
-            <div className="text-xs px-2.5 py-1 rounded-md bg-[var(--color-glass-dark)] border border-[var(--color-border-glass)] text-[var(--color-text-secondary)]">
-              Plan: <strong className="text-[var(--color-text-primary)]">{completedTodos}/{todoCount}</strong>
-            </div>
-            <div className="text-xs px-2.5 py-1 rounded-md bg-[var(--color-glass-dark)] border border-[var(--color-border-glass)] text-[var(--color-text-secondary)]">
-              Artifacts: <strong className="text-[var(--color-text-primary)]">{fileCount}</strong>
-            </div>
-            <div className="text-xs px-2.5 py-1 rounded-md bg-[var(--color-glass-dark)] border border-[var(--color-border-glass)] text-[var(--color-text-secondary)]">
-              Sources: <strong className="text-[var(--color-text-primary)]">{sourceCount}</strong>
-            </div>
-          </div>
-        </div>
-
-        {/* Export Buttons */}
-        {files.length > 0 && (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleCopySummary}
-              className="text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--color-glass)] border border-[var(--color-border)] hover:bg-[var(--color-surface)] text-[var(--color-text-primary)] transition-all font-medium"
-              title="Copy all generated text to clipboard"
-            >
-              {copied ? <Check className="w-3.5 h-3.5 text-[var(--color-success)]" /> : <FileText className="w-3.5 h-3.5" />}
-              {copied ? "Copied" : "Copy All"}
-            </button>
-            <button
-              onClick={handleExportAll}
-              className="text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--color-accent)] hover:opacity-90 text-white font-medium shadow-sm transition-all"
-              title="Download consolidated Markdown dossier"
-            >
-              <Download className="w-3.5 h-3.5" />
-              Export Dossier (.md)
-            </button>
-          </div>
-        )}
+    <section className="workspace-panel" aria-label="Deal room workspace">
+      <div className="workspace-heading">
+        <div><div className="section-eyebrow">DEAL ROOM · {deal.peers.length + 1} COMPANIES</div><h3>Review workspace</h3><p>{completedCount} of {stages.length} workflow stages compiled · {evidenceCount} evidence records</p></div>
+        {files.length > 0 && <button className="export-button" onClick={exportAll}><Download size={15} /> Export all drafts</button>}
       </div>
 
-      <div className="space-y-4">
-        <Section title="Autonomous Research Plan" icon={ListTodo} badge={todoCount}>
-          <TodoList todos={todos} />
-        </Section>
-
-        <Section title="Filesystem Artifacts" icon={FileText} badge={fileCount}>
-          <FileList files={files} onFileClick={setSelectedFile} />
-        </Section>
-
-        <Section title="Grounded Sources & Citations" icon={Globe} badge={sourceCount}>
-          <SourceList sources={sources} />
-        </Section>
+      <div className="workspace-tabs" role="tablist" aria-label="Deal room views">
+        {tabs.map((tab) => <button role="tab" aria-selected={activeTab === tab.id} className={`workspace-tab ${activeTab === tab.id ? "tab-active" : ""}`} key={tab.id} onClick={() => setActiveTab(tab.id)}>
+          {tab.label}{tab.count !== undefined && <span>{tab.count}</span>}
+        </button>)}
       </div>
 
-      {/* File Viewer Modal */}
-      <FileViewerModal
-        file={selectedFile}
-        onClose={() => setSelectedFile(null)}
-      />
-    </div>
+      <div className="workspace-content" role="tabpanel">
+        {activeTab === "checklist" && <div className="checklist-list">{stages.map((stage, index) => <article className="checklist-item" key={stage.stage}>
+          <div className={`checklist-mark mark-${stage.status}`}>{stage.status === "completed" ? <Check size={14} /> : String(index + 1).padStart(2, "0")}</div>
+          <div className="checklist-main"><div className="checklist-title"><span>{stage.stage}</span><span className={`stage-status status-${stage.status}`}>{stage.status.replaceAll("_", " ")}</span></div><p>{stage.detail}</p><span className="checklist-evidence">{stage.evidence_count} linked evidence records</span></div>
+        </article>)}</div>}
+
+        {activeTab === "artifacts" && <div className="artifact-list">{files.length ? files.map((file) => <article className="artifact-item" key={file.path}>
+          <button className="artifact-open" onClick={() => setSelectedFile(file)}><span className="artifact-icon"><FileText size={17} /></span><span className="artifact-info"><strong>{file.path.split("/").pop()}</strong><small>Revision {file.revision} · Saved {new Date(file.updated_at).toLocaleString()}</small></span></button>
+          <div className="artifact-actions"><button aria-label={`Copy ${file.path}`} title="Copy Markdown" onClick={() => void copyFile(file)}>{copiedPath === file.path ? <Check size={15} /> : <Clipboard size={15} />}</button><button aria-label={`Download ${file.path}`} title="Download Markdown" onClick={() => downloadFile(file)}><Download size={15} /></button></div>
+        </article>) : <div className="workspace-empty"><FileText size={20} /><strong>No draft artifacts yet</strong><span>Run the five-stage review to compile the memo, valuation model and risk register.</span></div>}
+          {copyError && <p role="alert" className="copy-error">{copyError}</p>}
+        </div>}
+
+        {activeTab === "evidence" && <EvidenceList sources={sources} />}
+
+        {activeTab === "valuation" && <ValuationEditor deal={deal} onSave={onSaveValuation} />}
+      </div>
+
+      <div className="workspace-footer"><span><span className="footer-dot" /> DRAFT · HUMAN REVIEW REQUIRED</span><span>{deal.coverage?.commercial ? "Commercial discovery returned leads" : "Commercial coverage incomplete"} · {deal.coverage?.news ? "News leads retrieved" : "News coverage incomplete"}</span></div>
+      <FileViewerModal file={selectedFile} onClose={() => setSelectedFile(null)} />
+    </section>
   );
 }

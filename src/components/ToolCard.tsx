@@ -19,7 +19,7 @@ import {
  * - DefaultToolCard: Generic JSON display for unknown tools
  *
  * Result structures expected from backend:
- * - internet_search: Array<{url, title, content, raw_content}>
+ * - evidence tools: {status, data, sources, limitations}
  * - write_todos: { todos: Array<{id, content, status}> }
  * - write_file: just args (path, content) - result is confirmation
  * - task: completion message
@@ -30,6 +30,14 @@ interface ToolCardProps {
   status: "inProgress" | "executing" | "complete";
   args: Record<string, unknown>;
   result?: unknown;
+}
+
+function toolStatusSummary(result: unknown): string | null {
+  if (!result || typeof result !== "object") return null;
+  const value = result as { status?: string; sources?: unknown[]; limitations?: string[] };
+  const count = Array.isArray(value.sources) ? value.sources.length : 0;
+  const label = value.status === "ok" ? "Retrieved" : value.status === "partial" ? "Partial coverage" : "Unavailable";
+  return `${label} · ${count} source${count === 1 ? "" : "s"}${value.limitations?.length ? " · gaps remain" : ""}`;
 }
 
 // Tool configuration mapping
@@ -85,10 +93,30 @@ const TOOL_CONFIG: Record<
       return "Research complete";
     },
   },
+  sec_filing_search: {
+    icon: Search,
+    getDisplayText: (args) => `SEC filings: ${(args.ticker_or_company as string) || "company"}`,
+    getResultSummary: (result) => toolStatusSummary(result),
+  },
+  financial_metrics_extractor: {
+    icon: Search,
+    getDisplayText: (args) => `SEC financials: ${(args.target_company as string) || "company"}`,
+    getResultSummary: (result) => toolStatusSummary(result),
+  },
+  competitor_matrix_generator: {
+    icon: Search,
+    getDisplayText: (args) => `Competitor evidence: ${(args.target_company as string) || "company"}`,
+    getResultSummary: (result) => toolStatusSummary(result),
+  },
+  news_sentiment_check: {
+    icon: Search,
+    getDisplayText: (args) => `Adverse-event leads: ${(args.target_company as string) || "company"}`,
+    getResultSummary: (result) => toolStatusSummary(result),
+  },
   write_file: {
     icon: Save,
     getDisplayText: (args) => {
-      const path = args.path as string | undefined;
+      const path = (args.file_path || args.path) as string | undefined;
       const filename =
         path?.split("/").pop() || (args.filename as string | undefined);
       return `Writing: ${filename || "file"}`;
@@ -106,7 +134,7 @@ const TOOL_CONFIG: Record<
   read_file: {
     icon: BookOpen,
     getDisplayText: (args) => {
-      const path = args.path as string | undefined;
+      const path = (args.file_path || args.path) as string | undefined;
       const filename =
         path?.split("/").pop() || (args.filename as string | undefined);
       return `Reading: ${filename || "file"}`;

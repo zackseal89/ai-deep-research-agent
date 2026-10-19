@@ -23,16 +23,9 @@ class MockChatModel(BaseChatModel):
     model_name: str = "mock-fde-researcher"
 
     def _generate(self, messages: list[BaseMessage], stop=None, run_manager=None, **kwargs):
-        last_msg = messages[-1].content if messages else ""
         content = (
-            f"### Deep Research Synthesis\n\n"
-            f"Based on the investigation into: **{last_msg[:120]}**, "
-            f"the research agent gathered multi-source findings across regulatory standards, "
-            f"architecture benchmarks, and runtime execution data.\n\n"
-            f"Key Takeaways:\n"
-            f"1. **Deterministic Architecture:** Enterprise AI systems require explicit guardrails and grounded tool use.\n"
-            f"2. **Evidence-Based Insights:** Eliminating hallucination via verified search and virtual filesystem artifacts.\n"
-            f"3. **Operational Telemetry:** End-to-end tracing guarantees auditability in production deployments."
+            "Live model synthesis is unavailable in fixture mode. Configure a supported live model "
+            "to ask the assistant questions; saved fixture content is illustrative and contains no researched claims."
         )
         return {"generations": [{"text": content, "message": AIMessage(content=content)}]}
 

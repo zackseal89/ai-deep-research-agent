@@ -7,10 +7,10 @@ ENV UV_COMPILE_BYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 # Copy project specifications
-COPY pyproject.toml .
+COPY pyproject.toml uv.lock ./
 
 # Install dependencies
-RUN uv pip install --system -r pyproject.toml
+RUN uv sync --locked --no-dev
 
 # Copy agent application code
 COPY . .
@@ -19,4 +19,4 @@ COPY . .
 EXPOSE 8123
 
 # Start the uvicorn server
-CMD ["python", "main.py"]
+CMD ["uv", "run", "--no-sync", "python", "main.py"]

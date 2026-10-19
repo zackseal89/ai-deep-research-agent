@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node ./node_modules/next/dist/bin/next dev --webpack -p 3000",
+    "dev": "node ./node_modules/next/dist/bin/next dev --webpack -H 127.0.0.1 -p 3000",
     "build": "node ./node_modules/next/dist/bin/next build",
-    "start": "node ./node_modules/next/dist/bin/next start",
+    "start": "node ./node_modules/next/dist/bin/next start -H 127.0.0.1 -p 3000",
     "typecheck": "node ./node_modules/typescript/bin/tsc --noEmit"
   },
   "dependencies": {
@@ -17,6 +17,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-markdown": "^9.0.0",
+    "remark-gfm": "^4.0.1",
     "rxjs": "^7.8.2"
   },
   "devDependencies": {

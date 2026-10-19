@@ -5,18 +5,18 @@ import "./globals.css";
 import "@copilotkit/react-ui/styles.css";
 
 export const metadata: Metadata = {
-  title: "Deep Research Assistant | CopilotKit Deep Agents Demo",
+  title: "Meridian | Investment Diligence",
   description:
-    "A research assistant powered by Deep Agents and CopilotKit - demonstrating planning, memory, subagents, and generative UI",
+    "An evidence-backed local workspace for public-company financial diligence and Investment Committee draft reports.",
   openGraph: {
-    title: "Deep Research Assistant",
-    description: "A research assistant powered by Deep Agents and CopilotKit",
+    title: "Meridian Investment Diligence",
+    description: "Public-company diligence drafts with SEC-linked financial evidence.",
     images: ["/og-image.png"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Deep Research Assistant",
-    description: "A research assistant powered by Deep Agents and CopilotKit",
+    title: "Meridian | Investment Diligence",
+    description: "Public-company diligence drafts with SEC-linked financial evidence.",
     images: ["/og-image.png"],
   },
 };
